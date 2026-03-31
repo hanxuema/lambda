@@ -35,6 +35,7 @@ resource "aws_rds_cluster" "demo_cluster" {
   db_subnet_group_name    = aws_db_subnet_group.aurora_subnet.name
   skip_final_snapshot     = true
   enable_http_endpoint    = true # This enables the Data API
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
 
   serverlessv2_scaling_configuration {
     max_capacity = 1.0
@@ -64,4 +65,72 @@ resource "null_resource" "db_initializer" {
   provisioner "local-exec" {
     command = "python3 -m venv .venv && .venv/bin/pip install boto3 && .venv/bin/python3 ${path.module}/../src/init_db.py ${aws_rds_cluster.demo_cluster.arn} ${aws_secretsmanager_secret.db_secret.arn}"
   }
+}
+
+# --- VPC Endpoints & Security Groups for Direct Connection Demo ---
+
+# Security Group for Lambda functions in the VPC
+resource "aws_security_group" "lambda_sg" {
+  name        = "aurora-demo-lambda-sg"
+  description = "Security group for Lambda functions"
+  vpc_id      = data.aws_vpc.default.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group for Aurora RDS
+resource "aws_security_group" "rds_sg" {
+  name        = "aurora-demo-rds-sg"
+  description = "Security group for Aurora cluster"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lambda_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group for VPC Endpoint
+resource "aws_security_group" "vpce_sg" {
+  name        = "aurora-demo-vpce-sg"
+  description = "Security group for Secrets Manager VPC Endpoint"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lambda_sg.id]
+  }
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# VPC Endpoint for Secrets Manager (allows Lambda in VPC to fetch secrets)
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = data.aws_vpc.default.id
+  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
 }

@@ -19,6 +19,12 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Allow Lambda to attach ENIs in VPC for `list_directors`
+resource "aws_iam_role_policy_attachment" "lambda_vpc" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 resource "aws_iam_policy" "lambda_data_api_policy" {
   name        = "lambda_data_api_policy"
   description = "Allow Lambda to access RDS Data API and Secrets Manager"
@@ -58,7 +64,6 @@ locals {
   lambdas = {
     "list_companies"       = "list_companies.handler",
     "get_company"          = "get_company.handler",
-    "list_directors"       = "list_directors.handler",
     "update_director"      = "update_director.handler",
     "list_all_directors"   = "list_all_directors.handler",
     "get_director_profile" = "get_director_profile.handler"
@@ -94,6 +99,36 @@ resource "aws_lambda_function" "api_lambda" {
     variables = {
       DB_SECRET_ARN  = aws_secretsmanager_secret.db_secret.arn
       DB_CLUSTER_ARN = aws_rds_cluster.demo_cluster.arn
+      DB_NAME        = var.db_name
+    }
+  }
+}
+
+# --- Special Lambda: list_directors (Traditional VPC Connection) ---
+data "archive_file" "list_directors_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../src/layer_code"
+  output_path = "${path.module}/lambda_list_directors.zip"
+}
+
+resource "aws_lambda_function" "api_lambda_traditional" {
+  function_name    = "demo_list_directors"
+  role             = aws_iam_role.lambda_exec_role.arn
+  handler          = "list_directors.handler"
+  runtime          = "python3.12"
+  filename         = data.archive_file.list_directors_zip.output_path
+  source_code_hash = data.archive_file.list_directors_zip.output_base64sha256
+
+  # Crucial: Attaches Lambda to VPC Subnets
+  vpc_config {
+    subnet_ids         = data.aws_subnets.default.ids
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
+
+  environment {
+    variables = {
+      DB_SECRET_ARN  = aws_secretsmanager_secret.db_secret.arn
+      DB_ENDPOINT    = aws_rds_cluster.demo_cluster.endpoint
       DB_NAME        = var.db_name
     }
   }
