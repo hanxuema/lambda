@@ -1,8 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = "xavier-demo-tfstate-866902053886"
-    key    = "lambda-demo/terraform.tfstate"
-    region = "ap-southeast-2"
+    bucket         = "ato-terraform-state"
+    key            = "lambda-demo/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "terraform-state-locking"
   }
   required_providers {
     aws = {
