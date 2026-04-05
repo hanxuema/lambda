@@ -24,14 +24,23 @@ def handler(event, context):
             return create_response(400, {'error': 'Invalid JSON in request body'})
             
         new_title = parsed_body.get('title')
-        if not new_title:
-            return create_response(400, {'error': 'Title field is required'})
+        new_address = parsed_body.get('address')
+        
+        if not new_title and not new_address:
+            return create_response(400, {'error': 'At least one field (title or address) is required'})
             
-        sql = 'UPDATE director SET title = :title WHERE id = :id RETURNING *'
-        params = [
-            {'name': 'title', 'value': {'stringValue': new_title}},
-            {'name': 'id', 'value': {'longValue': int(director_id)}}
-        ]
+        # Dynamically build SQL to update only provided fields
+        update_parts = []
+        params = [{'name': 'id', 'value': {'longValue': int(director_id)}}]
+        
+        if new_title:
+            update_parts.append("title = :title")
+            params.append({'name': 'title', 'value': {'stringValue': new_title}})
+        if new_address:
+            update_parts.append("address = :address")
+            params.append({'name': 'address', 'value': {'stringValue': new_address}})
+            
+        sql = f"UPDATE director SET {', '.join(update_parts)} WHERE id = :id RETURNING *"
         
         result = execute_query(sql, params)
         if not result:

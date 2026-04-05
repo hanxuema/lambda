@@ -15,7 +15,7 @@ def handler(event, context):
         logger.info(f"Handling get_director_profile request for: {name}")
         
         sql = """
-            SELECT d.id, d.name, d.title, c.id as company_id, c.name as company_name 
+            SELECT d.id, d.name, d.title, d.address, c.id as company_id, c.name as company_name 
             FROM director d
             JOIN company c ON d.company_id = c.id
             WHERE d.name = :name
@@ -36,7 +36,8 @@ def handler(event, context):
                 "id": r['id'],
                 "company_id": r['company_id'],
                 "company_name": r['company_name'],
-                "title": r['title']
+                "title": r['title'],
+                "address": r['address']
             })
             
         return create_response(200, {'profile': profile})

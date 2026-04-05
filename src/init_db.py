@@ -51,6 +51,8 @@ suffixes = ["Tech", "Solutions", "Systems", "Holdings", "Group", "Corp", "Ventur
 first_names = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen", "Christopher", "Lisa", "Daniel", "Nancy", "Matthew", "Betty", "Anthony", "Margaret"]
 last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White", "Harris"]
 titles = ["CEO", "CFO", "CTO", "COO", "Managing Director", "Executive Director", "Non-Executive Director", "Chairman", "Board Member", "President"]
+streets = ["George St", "Pitt St", "Collins St", "Bourke St", "Queen St", "Adelaide St", "Murray St", "Hay St", "North Terrace", "King William St"]
+suburbs = ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Canberra", "Hobart", "Darwin", "North Sydney", "Parramatta"]
 
 random.seed(42) # Use fixed seed to ensure consistent data generation
 
@@ -101,7 +103,8 @@ filtered_mappings = []
 for c_id, d_name, title in company_director_mappings:
     if (c_id, d_name) not in seen_mappings:
         seen_mappings.add((c_id, d_name))
-        filtered_mappings.append((c_id, d_name, title))
+        address = f"{random.randint(1, 999)} {random.choice(streets)}, {random.choice(suburbs)}"
+        filtered_mappings.append((c_id, d_name, title, address))
 
 company_director_mappings = filtered_mappings
 
@@ -125,7 +128,8 @@ try:
         id SERIAL PRIMARY KEY,
         company_id INT REFERENCES company(id),
         name VARCHAR(255) NOT NULL,
-        title VARCHAR(100)
+        title VARCHAR(100),
+        address VARCHAR(255)
     );
     """)
 
@@ -136,8 +140,8 @@ try:
     
     print("Inserting 100+ directors...")
     # Batch insert all director relationships
-    director_values = ", ".join([f"({c_id}, '{n}', '{t}')" for c_id, n, t in company_director_mappings])
-    execute(f"INSERT INTO director (company_id, name, title) VALUES {director_values};")
+    director_values = ", ".join([f"({c_id}, '{n}', '{t}', '{a}')" for c_id, n, t, a in company_director_mappings])
+    execute(f"INSERT INTO director (company_id, name, title, address) VALUES {director_values};")
 
     print(f"\\n🎉 Database Scaled and Initialized Successfully with {len(company_director_mappings)} relationships!")
 except Exception as e:

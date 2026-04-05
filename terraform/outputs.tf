@@ -30,3 +30,18 @@ output "database_password" {
   value       = aws_rds_cluster.demo_cluster.master_password
   sensitive   = true
 }
+
+output "vpc_id" {
+  description = "The ID of the VPC"
+  value       = data.aws_vpc.default.id
+}
+
+output "private_subnet_ids" {
+  description = "The IDs of the private subnets"
+  value       = data.aws_subnets.default.ids
+}
+
+output "rds_cluster_arn" {
+  description = "The ARN of the Aurora RDS cluster"
+  value       = aws_rds_cluster.demo_cluster.arn
+}

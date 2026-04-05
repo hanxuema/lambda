@@ -239,9 +239,10 @@ graph TD
             <div class="list" id="companyDirectorsList"></div>
             
             <div id="companyUpdateForm" style="display:none; margin-top:20px; padding-top:20px; border-top: 1px solid var(--border);">
-                <h4>Update <span id="companyEditingDirector" style="color:var(--text-muted)"></span>'s Title</h4>
-                <div class="form-group">
+                <h4>Update <span id="companyEditingDirector" style="color:var(--text-muted)"></span></h4>
+                <div class="form-group" style="flex-direction:column; gap:8px;">
                     <input type="text" id="companyNewTitleInput" placeholder="New Title">
+                    <input type="text" id="companyNewAddressInput" placeholder="New Address">
                     <button onclick="submitUpdate('company')">Save Update inside Aurora</button>
                 </div>
             </div>
@@ -257,8 +258,9 @@ graph TD
             
             <div id="groupedUpdateForm" style="display:none; margin-top:20px; padding-top:20px; border-top: 1px solid var(--border);">
                 <h4>Update Role for <span id="groupedEditingDirector" style="color:var(--text-muted)"></span></h4>
-                <div class="form-group">
+                <div class="form-group" style="flex-direction:column; gap:8px;">
                     <input type="text" id="groupedNewTitleInput" placeholder="New Title">
+                    <input type="text" id="groupedNewAddressInput" placeholder="New Address">
                     <button onclick="submitUpdate('grouped')">Save Update inside Aurora</button>
                 </div>
             </div>
@@ -393,9 +395,10 @@ graph TD
                     <div style="display:flex; flex-direction:column; gap:4px">
                         <span class="title">👤 <span class="link" onclick="fetchDirectorProfile('$${escapeHtml(d.name)}', true)">$${escapeHtml(d.name)}</span></span>
                         <span class="subtitle">Title: $${escapeHtml(d.title)}</span>
+                        <span class="subtitle" style="font-style: italic;">$${escapeHtml(d.address)}</span>
                     </div>
                     <div>
-                        <button style="padding: 6px 12px; font-size:0.8rem; background: rgba(255,255,255,0.1); border: 1px solid var(--border);" onclick="showUpdateForm('company', $${d.id}, '$${escapeHtml(d.name)}', '$${escapeHtml(d.title)}')">Edit Title</button>
+                        <button style="padding: 6px 12px; font-size:0.8rem; background: rgba(255,255,255,0.1); border: 1px solid var(--border);" onclick="showUpdateForm('company', $${d.id}, '$${escapeHtml(d.name)}', '$${escapeHtml(d.title)}', '$${escapeHtml(d.address)}')">Edit</button>
                     </div>
                 `;
                 list.appendChild(el);
@@ -462,12 +465,15 @@ graph TD
                 
                 profile.roles.forEach(role => {
                     html += `
-                    <div class="role-row">
-                        <div>
-                            <span class="subtitle">🏢 <span class="link" onclick="fetchDirectors($${role.company_id}, '$${escapeHtml(role.company_name)}')">$${escapeHtml(role.company_name)}</span></span>
-                            <span class="subtitle" style="margin-left:8px; color:var(--text)">($${escapeHtml(role.title)})</span>
+                    <div class="role-row" style="flex-wrap: wrap;">
+                        <div style="display:flex; flex-direction:column; gap:2px">
+                            <div>
+                                <span class="subtitle">🏢 <span class="link" onclick="fetchDirectors($${role.company_id}, '$${escapeHtml(role.company_name)}')">$${escapeHtml(role.company_name)}</span></span>
+                                <span class="subtitle" style="margin-left:8px; color:var(--text)">($${escapeHtml(role.title)})</span>
+                            </div>
+                            <span class="subtitle" style="font-style: italic; font-size: 0.75rem;">$${escapeHtml(role.address)}</span>
                         </div>
-                        <button style="padding: 4px 8px; font-size:0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius:4px" onclick="showUpdateForm('grouped', $${role.id}, '$${escapeHtml(profile.name)}', '$${escapeHtml(role.title)}')">Edit Title</button>
+                        <button style="padding: 4px 8px; font-size:0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius:4px" onclick="showUpdateForm('grouped', $${role.id}, '$${escapeHtml(profile.name)}', '$${escapeHtml(role.title)}', '$${escapeHtml(role.address)}')">Edit</button>
                     </div>
                     `;
                 });
@@ -480,13 +486,14 @@ graph TD
         // ==========================================
         // UPDATE FORM LOGIC
         // ==========================================
-        function showUpdateForm(viewType, roleId, name, currentTitle) {
+        function showUpdateForm(viewType, roleId, name, currentTitle, currentAddress) {
             currentDirectorId = roleId;
             const prefix = viewType === 'company' ? 'company' : 'grouped';
             
             document.getElementById(`$${prefix}UpdateForm`).style.display = 'block';
             document.getElementById(`$${prefix}EditingDirector`).innerText = name;
             document.getElementById(`$${prefix}NewTitleInput`).value = currentTitle;
+            document.getElementById(`$${prefix}NewAddressInput`).value = currentAddress;
             setTimeout(() => document.getElementById(`$${prefix}NewTitleInput`).focus(), 100);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
@@ -494,13 +501,14 @@ graph TD
         async function submitUpdate(viewType) {
             const prefix = viewType === 'company' ? 'company' : 'grouped';
             const newTitle = document.getElementById(`$${prefix}NewTitleInput`).value;
-            if(!newTitle) return alert("Title cannot be empty");
+            const newAddress = document.getElementById(`$${prefix}NewAddressInput`).value;
+            if(!newTitle && !newAddress) return alert("Title or Address required");
             
             const btn = document.querySelector(`#$${prefix}UpdateForm button`);
             const originalText = btn.innerText;
             btn.innerText = 'Updating...';
             
-            const data = await fetchAPI(`/directors/$${currentDirectorId}`, 'PUT', { title: newTitle });
+            const data = await fetchAPI(`/directors/$${currentDirectorId}`, 'PUT', { title: newTitle, address: newAddress });
             btn.innerText = originalText;
             
             if(data) {

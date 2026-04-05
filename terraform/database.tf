@@ -57,9 +57,10 @@ resource "null_resource" "db_initializer" {
     aws_secretsmanager_secret_version.db_secret_val
   ]
 
-  # Re-run this provisioner whenever the database cluster changes
+  # Re-run this provisioner whenever the database cluster or the init script changes
   triggers = {
     cluster_id = aws_rds_cluster.demo_cluster.id
+    script_hash = filemd5("${path.module}/../src/init_db.py")
   }
 
   provisioner "local-exec" {

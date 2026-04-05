@@ -8,7 +8,7 @@ def handler(event, context):
     try:
         logger.info("Handling list_all_directors request")
         sql = """
-            SELECT d.id, d.name, d.title, c.id as company_id, c.name as company_name 
+            SELECT d.id, d.name, d.title, d.address, c.id as company_id, c.name as company_name 
             FROM director d
             JOIN company c ON d.company_id = c.id
             ORDER BY d.name ASC, c.name ASC
@@ -24,7 +24,8 @@ def handler(event, context):
                 "id": r['id'],
                 "company_id": r['company_id'],
                 "company_name": r['company_name'],
-                "title": r['title']
+                "title": r['title'],
+                "address": r['address']
             })
             
         result = list(grouped.values())

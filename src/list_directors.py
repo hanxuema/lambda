@@ -43,19 +43,20 @@ def handler(event, context):
         )
         
         # 4. Execute Query
-        sql = "SELECT id, name, title, company_id FROM director WHERE company_id = :cid ORDER BY id ASC"
+        sql = "SELECT id, name, title, address, company_id FROM director WHERE company_id = :cid ORDER BY id ASC"
         # pg8000.native uses :name for parameters
         rows = conn.run(sql, cid=int(company_id))
         
         # 5. Transform rows to dict
-        # rows format: [[id, name, title, company_id], ...]
+        # rows format: [[id, name, title, address, company_id], ...]
         directors = []
         for r in rows:
             directors.append({
                 "id": r[0],
                 "name": r[1],
                 "title": r[2],
-                "company_id": r[3]
+                "address": r[3],
+                "company_id": r[4]
             })
             
         conn.close()
