@@ -176,7 +176,7 @@
         <!-- Dashboard Intro (Home View) -->
         <div class="card" id="homeView">
             <h2>Welcome to the Demo</h2>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">This glassmorphism UI is seamlessly powered by an API Gateway integrating Serverless Python DB microservices.</p>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;"></p>
             
             <div style="margin: 0 0 24px 0; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border); overflow: hidden;">
                 <div class="mermaid" style="display:flex; justify-content:center; padding: 20px;">
@@ -184,8 +184,8 @@ graph TD
     User(["👨‍💻 End User Browser"]) -->|"HTTPS"| S3["🪣 AWS S3 Bucket<br/>Static Website Hosting"]
     
     subgraph AWS_Cloud ["☁️ AWS Cloud"]
-        S3 -->|"CORS APIs"| APIGW["🚪 Amazon API Gateway<br/>HTTP API & Routing"]
-        APIGW -->|"Proxy Invoke"| Lambdas["⚡ AWS Lambda<br/>6x Python Microservices"]
+        S3 -->|"CORS APIs"| APIGW["🚪 Amazon API Gateway<br/>HTTP API & Routing to Mock APIGEE"]
+        APIGW -->|"Proxy Invoke"| Lambdas["⚡ AWS Lambda<br/>Microservices"]
         
         subgraph Security ["🛡️ Security Context"]
             IAM["🔑 AWS IAM Roles<br/>Execution Policies"]
