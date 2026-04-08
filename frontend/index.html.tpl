@@ -197,10 +197,10 @@ graph TD
         
         subgraph DB_Layer ["🗄️ Database Layer (VPC)"]
             DataAPI["🔌 Amazon RDS Data API<br/>Stateless HTTPS"]
-            Aurora[("🐘 Amazon Aurora Serverless v2<br/>PostgreSQL Cluster")]
+            Aurora[("🐘 Amazon Aurora Serverless <br/>PostgreSQL Cluster")]
         end
         
-        Lambdas -->|"Boto3 Execute"| DataAPI
+        Lambdas -->|"Execute"| DataAPI
         DataAPI -->|"Manage"| Aurora
     end
 
