@@ -44,14 +44,14 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 }
 
 resource "aws_s3_object" "index_html" {
-  bucket       = aws_s3_bucket.frontend.id
-  key          = "index.html"
-  
+  bucket = aws_s3_bucket.frontend.id
+  key    = "index.html"
+
   # Utilizes Terraform templatefile() to inject the dynamic API URL seamlessly into the HTML
-  content      = templatefile("${path.module}/../frontend/index.html.tpl", {
+  content = templatefile("${path.module}/../frontend/index.html.tpl", {
     api_base_url = aws_apigatewayv2_api.demo_api.api_endpoint
   })
-  
+
   content_type = "text/html"
   depends_on   = [aws_s3_bucket_policy.allow_public_read]
 }

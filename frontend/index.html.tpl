@@ -232,10 +232,25 @@ graph TD
             <div class="list" id="companiesList"></div>
         </div>
 
+        <!-- Single Company Profile Output (RDS Proxy Demo) -->
+        <div class="card" id="companyProfileView" style="display: none;">
+            <button class="btn-back" onclick="showView('companiesView')">← Back to Companies</button>
+            <h2 style="display: flex; align-items: center; gap: 8px;">
+                <span id="profileCompanyName" style="color:var(--primary)">...</span>
+                <span style="font-size: 0.8rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.2); border: 1px solid var(--primary); border-radius: 4px; color: var(--primary);">RDS Proxy</span>
+            </h2>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p class="subtitle" style="margin-bottom: 5px;"><strong>Company ID:</strong> <span id="profileCompanyId"></span></p>
+                <p class="subtitle" style="margin-bottom: 5px;"><strong>Industry:</strong> <span id="profileCompanyIndustry"></span></p>
+            </div>
+            
+            <button onclick="fetchDirectors(currentProfileCompanyId, currentProfileCompanyName)">View Board of Directors (TCP)</button>
+        </div>
+
         <!-- Single Company Directors Output -->
         <div class="card" id="companyDirectorsView" style="display: none;">
             <button class="btn-back" onclick="showView('companiesView')">← Back to Companies</button>
-            <h2>Directors for <span id="selectedCompanyName" style="color:var(--primary)">...</span></h2>
+            <h2>Directors for <span id="selectedCompanyName" class="link" onclick="if(currentCompanyId) fetchCompanyProfile(currentCompanyId, currentCompanyNameStr)">...</span></h2>
             <div class="list" id="companyDirectorsList"></div>
             
             <div id="companyUpdateForm" style="display:none; margin-top:20px; padding-top:20px; border-top: 1px solid var(--border);">
@@ -299,7 +314,7 @@ graph TD
         });
 
         function showView(viewId, pushHistory = true, stateObj = null) {
-            ['homeView', 'companiesView', 'companyDirectorsView', 'groupedDirectorsView'].forEach(id => {
+            ['homeView', 'companiesView', 'companyProfileView', 'companyDirectorsView', 'groupedDirectorsView'].forEach(id => {
                 document.getElementById(id).style.display = (id === viewId) ? 'block' : 'none';
             });
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -353,8 +368,9 @@ graph TD
                         <span class="title">🏢 $${escapeHtml(c.name)}</span>
                         <span class="subtitle">Industry: $${escapeHtml(c.industry)}</span>
                     </div>
-                    <div>
-                        <button style="padding: 6px 12px; font-size:0.8rem;" onclick="fetchDirectors($${c.id}, '$${escapeHtml(c.name)}')">View Directors</button>
+                    <div style="display:flex; gap: 8px;">
+                        <button style="padding: 6px 12px; font-size:0.8rem; background: rgba(56, 189, 248, 0.2); border: 1px solid var(--primary); color: var(--text);" onclick="fetchCompanyProfile($${c.id}, '$${escapeHtml(c.name)}')">Company Details (Proxy)</button>
+                        <button style="padding: 6px 12px; font-size:0.8rem;" onclick="fetchDirectors($${c.id}, '$${escapeHtml(c.name)}')">View Directors (TCP)</button>
                     </div>
                 `;
                 list.appendChild(el);
@@ -362,7 +378,31 @@ graph TD
         }
 
         // ==========================================
-        // DIRECTORS FOR A COMPANY (Flat List)
+        // SINGLE COMPANY PROFILE (RDS Proxy)
+        // ==========================================
+        let currentProfileCompanyId = null;
+        let currentProfileCompanyName = null;
+
+        async function fetchCompanyProfile(companyId, companyName, pushHistory = true) {
+            currentProfileCompanyId = companyId;
+            currentProfileCompanyName = companyName;
+            
+            document.getElementById('profileCompanyName').innerText = "Loading...";
+            document.getElementById('profileCompanyId').innerText = "...";
+            document.getElementById('profileCompanyIndustry').innerText = "...";
+            
+            showView('companyProfileView', pushHistory, { action: 'companyProfile', params: {id: companyId, name: companyName} });
+
+            const data = await fetchAPI(`/companies/$${companyId}`);
+            if (!data || !data.company) return;
+
+            document.getElementById('profileCompanyName').innerText = data.company.name;
+            document.getElementById('profileCompanyId').innerText = data.company.id;
+            document.getElementById('profileCompanyIndustry').innerText = data.company.industry || "N/A";
+        }
+
+        // ==========================================
+        // DIRECTORS FOR A COMPANY (Traditional TCP)
         // ==========================================
         async function fetchDirectors(companyId, companyName, pushHistory = true) {
             currentCompanyId = companyId;
