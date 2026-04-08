@@ -44,10 +44,11 @@ resource "aws_rds_cluster" "demo_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "demo_instance" {
-  cluster_identifier = aws_rds_cluster.demo_cluster.id
-  instance_class     = "db.serverless"
-  engine             = aws_rds_cluster.demo_cluster.engine
-  engine_version     = aws_rds_cluster.demo_cluster.engine_version
+  cluster_identifier  = aws_rds_cluster.demo_cluster.id
+  instance_class      = "db.serverless"
+  engine              = aws_rds_cluster.demo_cluster.engine
+  engine_version      = aws_rds_cluster.demo_cluster.engine_version
+  publicly_accessible = true
 }
 
 # Run database table initialization and data seeding automatically
@@ -95,6 +96,13 @@ resource "aws_security_group" "rds_sg" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.lambda_sg.id]
+  }
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Open for pgAdmin access from local machine
   }
 
   egress {
